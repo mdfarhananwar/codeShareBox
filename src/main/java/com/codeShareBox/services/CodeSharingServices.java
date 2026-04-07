@@ -7,10 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import com.codeShareBox.model.CodeShare;
 import com.codeShareBox.repository.CodeShareRepository;
+import org.springframework.ui.Model;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +42,7 @@ public class CodeSharingServices {
      * @return ResponseEntity containing the code details or a 404 response if not found.
      */
     public ResponseEntity<CodeShare> getCodeApi(UUID id) {
-        
+
         Optional<CodeShare> byId = codeShareRepository.findById(id);
         CodeShare codeShare = byId.orElse(new CodeShare());
         if (!codeShareRepository.existsById(id)) {
@@ -48,7 +50,7 @@ public class CodeSharingServices {
         }
 
         if (codeShare.getInitialTime() > 0) {
-            
+
             String date = codeShare.getDate();
             long time = codeShare.getTime();
             LocalDateTime then = LocalDateTime.parse(date);
@@ -56,7 +58,7 @@ public class CodeSharingServices {
             Duration duration = Duration.between(then, now);
             long timeBetween = duration.getSeconds();
             codeShare.setTime(time - timeBetween);
-            
+
         }
         if (codeShare.getInitialViews() > 0) {
             long views = codeShare.getViews();
@@ -78,6 +80,70 @@ public class CodeSharingServices {
             }
         }
         return ResponseEntity.ok(codeShareRepository.save(codeShare));
+    }
+    public String getCodeApi(UUID id, Model model) {
+
+        Optional<CodeShare> byId = codeShareRepository.findById(id);
+        if (byId.isEmpty()) {
+            return "404"; // If it doesn't exist, go straight to 404
+        }
+
+        CodeShare codeShare = byId.get();
+        String code = codeShare.getCode();
+
+        // 1. Calculate strictly how many seconds have passed since creation
+        LocalDateTime then = LocalDateTime.parse(codeShare.getDate());
+        LocalDateTime now = LocalDateTime.now();
+        long secondsElapsed = Duration.between(then, now).getSeconds();
+
+        // 2. Check if TIME has expired
+        boolean isTimeExpired = false;
+        long timeRemaining = codeShare.getInitialTime();
+        if (codeShare.getInitialTime() > 0) {
+            timeRemaining = codeShare.getInitialTime() - secondsElapsed;
+            if (timeRemaining <= 0) {
+                isTimeExpired = true;
+            }
+        }
+
+        // 3. Check if VIEWS have expired
+        boolean isViewsExpired = false;
+        long viewsRemaining = codeShare.getViews();
+        if (codeShare.getInitialViews() > 0) {
+            viewsRemaining--; // Decrement view count for this specific visit
+            if (viewsRemaining < 0) {
+                isViewsExpired = true;
+            }
+        }
+
+        // 4. THE CRITICAL FIX: If EITHER the time is up OR the views are up, delete and return 404
+        if (isTimeExpired || isViewsExpired) {
+            codeShareRepository.delete(codeShare);
+            return "404";
+        }
+
+        // 5. Update the views and time in the database
+        if (codeShare.getInitialViews() > 0) {
+            codeShare.setViews(viewsRemaining);
+        }
+        if (codeShare.getInitialTime() > 0) {
+            codeShare.setTime(timeRemaining);
+        }
+        codeShareRepository.save(codeShare);
+
+        // 6. Format the date for the frontend UI
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy h:mm:ss a");
+        String formattedDate = then.format(formatter);
+
+        // 7. Send the correct data to the HTML page
+        model.addAttribute("code", code);
+        model.addAttribute("date", formattedDate);
+        model.addAttribute("timeRemaining", timeRemaining);
+        model.addAttribute("views", viewsRemaining);
+        model.addAttribute("initialViews", codeShare.getInitialViews());
+        model.addAttribute("size", codeShare.getSize());
+
+        return "codePage";
     }
 
     /**

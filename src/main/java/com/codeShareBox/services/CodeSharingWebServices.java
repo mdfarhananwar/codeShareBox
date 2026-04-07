@@ -90,62 +90,69 @@ public class CodeSharingWebServices {
 
     @GetMapping("/code/{id}")
     public String getCode(UUID id, Model model) {
-        
+
         Optional<CodeShare> byId = codeShareRepository.findById(id);
-        CodeShare codeShare = byId.orElse(null);
-        if (!codeShareRepository.existsById(id)) {
+        if (byId.isEmpty()) {
             return "404";
         }
 
-        assert codeShare != null;
+        CodeShare codeShare = byId.get();
         String code = codeShare.getCode();
 
-        String date = codeShare.getDate();
-        LocalDateTime then = LocalDateTime.parse(date);
+        // 1. Calculate strictly how many seconds have passed
+        LocalDateTime then = LocalDateTime.parse(codeShare.getDate());
         LocalDateTime now = LocalDateTime.now();
-        // Define a custom date and time format pattern
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy h:mm:ss a");
+        long secondsElapsed = Duration.between(then, now).getSeconds();
 
-        // Format the LocalDateTime instance using the formatter
-        date = then.format(formatter);
-        Duration duration = Duration.between(then, now);
-        long timeBetween = duration.getSeconds();
-        Long views = codeShare.getViews();
-        if (codeShare.getInitialViews() > 0) {
-            --views;
-        }
-        codeShare.setViews(views);
-
+        // 2. Check if TIME has expired
+        boolean isTimeExpired = false;
+        long timeRemaining = codeShare.getInitialTime();
         if (codeShare.getInitialTime() > 0) {
-            codeShare.setTime(codeShare.getTime() - timeBetween);
+            timeRemaining = codeShare.getInitialTime() - secondsElapsed;
+            if (timeRemaining <= 0) {
+                isTimeExpired = true;
+            }
         }
 
-        if (codeShare.getInitialTime() > 0 || codeShare.getInitialViews() > 0) {
+        // 3. Check if VIEWS have expired
+        boolean isViewsExpired = false;
+        long viewsRemaining = codeShare.getViews();
+        if (codeShare.getInitialViews() > 0) {
+            viewsRemaining--;
+            if (viewsRemaining < 0) {
+                isViewsExpired = true;
+            }
+        }
 
-            if (codeShare.getInitialTime() <= 0 && codeShare.getViews() < 0) {
-                codeShareRepository.delete(codeShare);
-                return "404";
-            }
-            if (codeShare.getTime() <= 0 && codeShare.getInitialViews() <= 0) {
-                codeShareRepository.delete(codeShare);
-                return "404";
-            }
-            if (codeShare.getViews() < 0 && codeShare.getTime() <= 0) {
-                codeShareRepository.delete(codeShare);
-                return "404";
-            }
+        // 4. THE CRITICAL FIX: If either is expired, delete and return 404
+        if (isTimeExpired || isViewsExpired) {
+            codeShareRepository.delete(codeShare);
+            return "404";
+        }
+
+        // 5. Update the database
+        if (codeShare.getInitialViews() > 0) {
+            codeShare.setViews(viewsRemaining);
+        }
+        if (codeShare.getInitialTime() > 0) {
+            codeShare.setTime(timeRemaining);
         }
         codeShareRepository.save(codeShare);
+
+        // 6. Format the date
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy h:mm:ss a");
+        String formattedDate = then.format(formatter);
+
+        // 7. Send data to HTML
         model.addAttribute("code", code);
-        model.addAttribute("date", date);
-        model.addAttribute("timeRemaining", codeShare.getTime());
-        model.addAttribute("views", views);
+        model.addAttribute("date", formattedDate);
+        model.addAttribute("timeRemaining", timeRemaining);
+        model.addAttribute("views", viewsRemaining);
         model.addAttribute("initialViews", codeShare.getInitialViews());
-        model.addAttribute("size",codeShare.getSize());
-        // Return the name of the FreeMarker template
+        model.addAttribute("size", codeShare.getSize());
+
         return "codePage";
     }
-
     /**
      * Get the lists of public code snippets.
      * @param model The Spring MVC model to populate with code details.

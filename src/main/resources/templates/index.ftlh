@@ -216,9 +216,23 @@ button:hover {
         <h1>Create Code Snippet</h1>
         <form action="/api/code/new" method="post">
             <textarea id="code_snippet" name="textareaName" placeholder="Write or paste your code here"></textarea>
+
             <div class="input-container">
                 <i class="fas fa-stopwatch input-icon"></i>
-                <input id="time_restriction" class="input-field" type="number" placeholder="Time Restriction (seconds)" min="0">
+                <select id="time_restriction" class="input-field" style="cursor: pointer; background: transparent; color: #757575;">
+                    <option value="" disabled selected hidden>Link Expiry (Choose time)</option>
+                    <option value="60">1 Minute</option>
+                    <option value="3660">1 Hour</option>
+                    <option value="28800">8 Hours</option>
+                    <option value="86400">24 Hours</option>
+                    <option value="604800">7 Days</option>
+                    <option value="864000">10 Days</option>
+                    <option value="1296000">15 Days</option>
+                    <option value="2592000">30 Days</option>
+                    <option value="15552000">180 Days</option>
+                    <option value="31536000">365 Days</option>
+                    <option value="0">Never</option>
+                </select>
             </div>
             <div class="input-container">
                 <i class="fas fa-eye input-icon"></i>

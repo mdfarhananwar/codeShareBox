@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -179,13 +178,11 @@
             </div>
             <#if timeRemaining gt 0>
             <div class="icon" title="Time Remaining"><i class="fa fa-hourglass" aria-hidden="true"></i>
-
                 <div class="text">
-                    Code expires in   ${timeRemaining} secs
+                    Code expires in <span id="live_countdown">${timeRemaining}</span> secs
                 </div>
-
             </div>
-        </#if>
+            </#if>
           <#if views gte 0 \and initialViews gt 0 >
         <div class="icon" title="Views Restriction"><i class="fa fa-eye" aria-hidden="true"></i>
             <div class="text">
@@ -203,8 +200,6 @@
         <code>${code}</code>
     </pre>
 </div>
-</main>
-
 
 <script>
     function copyCode(button) {
@@ -222,7 +217,51 @@
           copyButton.textContent = 'Copy Code';
         }, 2000);
     }
+
+    // --- BOTH LOGICS SAFELY INSIDE THE EVENT LISTENER ---
+    window.addEventListener('DOMContentLoaded', (event) => {
+
+        // 1. COUNTDOWN LOGIC
+        const countdownElement = document.getElementById('live_countdown');
+
+        if (countdownElement) {
+            let timeLeft = parseInt(countdownElement.innerText);
+
+            const timer = setInterval(function() {
+                timeLeft--; // Subtract 1 second
+                countdownElement.innerText = timeLeft; // Update UI
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer); // Stop the clock
+                    window.location.reload(); // Refresh to trigger the 404
+                }
+            }, 1000); // 1000ms = 1 second
+        }
+
+        // 2. LIVE CLOCK LOGIC
+        const dateElement = document.getElementById('load_date');
+        if (dateElement) {
+            setInterval(function() {
+                const now = new Date();
+
+                // Format the date to perfectly match your Java backend formatter
+                const options = {
+                    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+                };
+
+                // Generate the string and remove the " at " that some browsers automatically insert
+                let formattedString = now.toLocaleString('en-US', options).replace(' at ', ' ');
+
+                dateElement.innerText = formattedString;
+            }, 1000); // Update every 1 second
+        }
+
+    });
 </script>
 </body>
 
 </html>
+
+
+

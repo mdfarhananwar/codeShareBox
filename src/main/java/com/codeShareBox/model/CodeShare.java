@@ -16,12 +16,14 @@ public class CodeShare {
     @Id
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
-    @Column(columnDefinition = "BINARY(16)") // Use BINARY(16) for UUID
-    private UUID id; // Change the type to UUID
+    @Column(columnDefinition = "uuid") // Let Postgres use its native UUID type
+    private UUID id;
+//    @Column(columnDefinition = "BINARY(16)") // Use BINARY(16) for UUID
+//    private UUID id; // Change the type to UUID
 //    @Column(name = "code")
 //    @Lob // Use the @Lob annotation to indicate CLOB
 //    private String code;
-    @Column(name = "code", columnDefinition = "MEDIUMTEXT") // Use MEDIUMTEXT data type
+    @Column(name = "code", columnDefinition = "TEXT") // Use TEXT data type
     private String code;
     @JsonIgnore
     private String date;

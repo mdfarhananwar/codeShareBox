@@ -35,7 +35,9 @@ bootJar {
 
 dependencies {
 
-	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.33'
+	//implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.33'
+	implementation 'org.postgresql:postgresql'
+// or runtimeOnly 'org.postgresql:postgresql'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.hibernate.validator:hibernate-validator'
 	implementation 'org.springframework.boot:spring-boot-starter'
