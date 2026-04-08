@@ -8,15 +8,11 @@ COPY build.gradle settings.gradle ./
 # Copy the src directory (your source code)
 COPY . /app/
 
-# Build the JAR using Gradle (Skipping tests so it doesn't crash looking for the DB!)
+# Build the JAR using Gradle (Skipping tests so it doesn't crash!)
 RUN gradle clean build -x test
-# Build the JAR using Gradle
-RUN gradle clean build
 
-# Stage 2: Create the final image (Using Eclipse Temurin instead of OpenJDK!)
-FROM eclipse-temurin:17-jre-alpine
 # Stage 2: Create the final image
-FROM openjdk:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
 # Copy the JAR directly from the build stage
