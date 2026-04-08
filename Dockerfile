@@ -18,6 +18,8 @@ WORKDIR /app
 # Copy the JAR directly from the build stage
 COPY --from=build /app/build/libs/*.jar codeShareBox.jar
 
-# Expose the port and specify the entry point
+# Expose the port
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "codeShareBox.jar", "--spring.profiles.active=prod"]
+
+# THE BULLETPROOF OVERRIDE: -D flag goes before -jar
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "codeShareBox.jar"]
