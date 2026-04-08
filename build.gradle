@@ -15,16 +15,16 @@ repositories {
 	mavenCentral()
 }
 
-jar {
-	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-	manifest {
-		attributes(
-
-				'Main-Class': 'com.codeShareBox.CodeShareBoxApplication'
-		)
-	}
-	from { 		(configurations.runtimeClasspath).collect { 			it.isDirectory() ? it : zipTree(it) 		} 	}
-}
+//jar {
+//	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+//	manifest {
+//		attributes(
+//
+//				'Main-Class': 'com.codeShareBox.CodeShareBoxApplication
+//		)
+//	}
+//	from { 		(configurations.runtimeClasspath).collect { 			it.isDirectory() ? it : zipTree(it) 		} 	}
+//}
 bootJar {
 	mainClass = 'com.codeShareBox.CodeShareBoxApplication'
 	archiveFileName = 'CodeShareBox.jar'
